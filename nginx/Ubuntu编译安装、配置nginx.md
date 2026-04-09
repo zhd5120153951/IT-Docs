@@ -89,3 +89,11 @@ Address already in use: 80	端口被占用	sudo netstat -tulnp | grep :80 查看
 Permission denied	权限不足	sudo chown -R nginx:nginx /usr/local/nginx*
 nginx.service not found	服务文件路径错误	检查 /etc/systemd/system/nginx.service 是否存在
 ```
+
+# Ubuntu命令安装
+```bash
+sudo apt-get install nginx
+
+两种安装方式对应不同的反向代理方法:分别查看反向代理配置.md和生成nginx自签名证书.md
+```
+
