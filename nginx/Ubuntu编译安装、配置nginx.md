@@ -1,4 +1,6 @@
-# Ubuntu系统上完成 Nginx 1.26.2 的源码编译安装全过程，并配置 systemd 开机自启、权限控制、状态监控等关键功能
+# Nginx 1.26.2 在 Ubuntu 上的源码编译安装与配置指南
+
+## 编译安装nginx
 
 nginx核心特性如下：
 ![alt text](images/image.png)
@@ -41,8 +43,12 @@ sudo useradd -r -s /sbin/nologin -M nginx
 ```
 设置目录权限：
 ```bash
+# 可选
 sudo chown -R nginx:nginx /usr/local/nginx*
 ```
+## 开机自启动配置
+
+```bash
 5. 配置 systemd 开机自启
 ```bash
 sudo vim /etc/systemd/system/nginx.service
@@ -89,11 +95,63 @@ Address already in use: 80	端口被占用	sudo netstat -tulnp | grep :80 查看
 Permission denied	权限不足	sudo chown -R nginx:nginx /usr/local/nginx*
 nginx.service not found	服务文件路径错误	检查 /etc/systemd/system/nginx.service 是否存在
 ```
+## 反向代理配置
 
+1. 直接在/usr/local/nginx-1.26.2/conf/nginx.conf中修改server块，新增反向代理配置：
+```nginx
+http {
+
+    server {
+        listen 8443 ssl;
+
+        ssl_certificate     cert/server.crt;
+        ssl_certificate_key cert/server.key;
+
+        location /api1/ {
+            proxy_pass http://127.0.0.1:8001/;
+        }
+
+        location /api2/ {
+            proxy_pass http://127.0.0.1:8002/;
+        }
+    }
+
+}
+
+```
+2. 和系统安装的nginx一样的配置(通过配置目录site-enabled)
+```bash
+1. 修改/usr/local/nginx-1.26.2/conf/nginx.conf，添加include指令：
+http {
+    include mime.types;
+    default_type application/octet-stream;
+    include conf.d/*.conf; # 包含 conf.d 目录下的所有配置文件(把新的反向代理配置放在 conf.d 目录下)
+    # include site-enabled/*.conf; # 包含 site-enabled 目录下的所有配置文件(可选)
+}
+2. 创建目录conf.d或site-enabled，并在其中添加反向代理配置文件：
+sudo mkdir -p /usr/local/nginx-1.26.2/conf/conf.d
+3. 创建反向代理配置文件，例如reverse-proxy.conf：
+server {
+
+    listen 8443 ssl;
+
+    ssl_certificate cert/server.crt;
+    ssl_certificate_key cert/server.key;
+
+    location /api1/ {
+        proxy_pass http://127.0.0.1:8001/;
+        ...
+    }
+
+}
+```
 # Ubuntu命令安装
 ```bash
 sudo apt-get install nginx
 
-两种安装方式对应不同的反向代理方法:分别查看反向代理配置.md和生成nginx自签名证书.md
+1.两种安装方式对应不同的反向代理方法:分别查看反向代理配置.md和生成nginx自签名证书.md
+2.直接在/usr/local/nginx-1.26.2/conf/nginx.conf中修改server块，新增反向代理配置
+3.或者通过配置目录site-enabled，新增反向代理配置文件，并在nginx.conf中添加include指令包含该目录
 ```
+
 
